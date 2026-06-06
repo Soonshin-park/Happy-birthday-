@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Special Message For You 💖</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #0d0d1a;
+    font-family: 'Georgia', serif;
+    overflow-x: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas#stars {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .scene {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    padding: 2rem;
+  }
+
+  /* ── ENTRY SCREEN ── */
+  #entry {
+    text-align: center;
+    animation: fadeIn 1.5s ease;
+  }
+
+  #entry .lock-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite;
+  }
+
+  #entry h1 {
+    color: #f8c8d4;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.6rem;
+  }
+
+  #entry p {
+    color: #b08090;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
+  .name-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(248,200,212,0.3);
+    border-radius: 12px;
+    padding: 0.9rem 1.4rem;
+    color: #f8c8d4;
+    font-size: 1.1rem;
+    font-family: 'Georgia', serif;
+    width: min(320px, 90vw);
+    outline: none;
+    text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .name-box::placeholder { color: rgba(248,200,212,0.4); }
+  .name-box:focus {
+    border-color: rgba(248,200,212,0.8);
+    box-shadow: 0 0 20px rgba(248,200,212,0.15);
+  }
+
+  .enter-btn {
+    display: block;
+    margin: 1.2rem auto 0;
+    background: linear-gradient(135deg, #c2687a, #8a3a5c);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    font-family: 'Georgia', serif;
+    padding: 0.8rem 2.2rem;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .enter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(194,104,122,0.4);
+  }
+  .enter-btn:active { transform: scale(0.97); }
+
+  /* ── BIRTHDAY SCREEN ── */
+  #birthday {
+    display: none;
+    text-align: center;
+    max-width: 700px;
+    width: 100%;
+    animation: fadeIn 1.8s ease;
+  }
+
+  .greeting-name {
+    font-size: clamp(2.2rem, 7vw, 4rem);
+    color: #f8c8d4;
+    font-style: italic;
+    margin-bottom: 0.4rem;
+    text-shadow: 0 0 40px rgba(248,200,212,0.5);
+  }
+
+  .hb-line {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    color: #e8a0b4;
+    letter-spacing: 0.12em;
+    margin-bottom: 2.5rem;
+    text-transform: uppercase;
+    font-style: normal;
+    font-family: 'Courier New', monospace;
+  }
+
+  .terminal-box {
+    background: rgba(10,10,20,0.8);
+    border: 1px solid rgba(248,200,212,0.2);
+    border-radius: 14px;
+    padding: 1.8rem 2rem;
+    text-align: left;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .terminal-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #c2687a, transparent);
+    animation: scanline 3s linear infinite;
+  }
+
+  .t-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.2rem;
+  }
+  .t-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .t-dot:nth-child(1) { background: #ff5f57; }
+  .t-dot:nth-child(2) { background: #febc2e; }
+  .t-dot:nth-child(3) { background: #28c840; }
+
+  .t-line {
+    font-family: 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 2;
+    color: #c8d8f0;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .t-line.vis { opacity: 1; }
+  .t-line .prompt { color: #c2687a; }
+  .t-line .val    { color: #80e8b0; }
+  .t-line .str    { color: #f8c8d4; }
+  .t-line .kw     { color: #c0a0e8; }
+  .t-line .cmt    { color: #607080; font-style: italic; }
+
+  .love-letters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .letter-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(248,200,212,0.15);
+    border-radius: 12px;
+    padding: 1.2rem 1rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s;
+  }
+  .letter-card.vis { opacity: 1; transform: translateY(0); }
+  .letter-card:hover { border-color: rgba(248,200,212,0.5); }
+
+  .letter-card .emoji { font-size: 1.6rem; margin-bottom: 0.5rem; }
+  .letter-card h3 {
+    color: #f0b0c4;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .letter-card p {
+    color: #9090b0;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .final-msg {
+    color: #d8a0b8;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    line-height: 1.9;
+    opacity: 0;
+    transition: opacity 1s ease;
+    font-style: italic;
+  }
+  .final-msg.vis { opacity: 1; }
+  .final-msg .sign {
+    display: block;
+    margin-top: 1.2rem;
+    color: #f8c8d4;
+    font-size: 1rem;
+    font-style: normal;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ── hearts ── */
+  .heart-burst {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+    font-size: 1.3rem;
+    animation: floatUp 2.2s ease forwards;
+  }
+
+  /* ── animations ── */
+  @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse  { 0%,100% { transform:scale(1); } 50% { transform:scale(1.12); } }
+  @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-180px) scale(0.6); } }
+  @keyframes scanline { 0% { left:-100%; } 100% { left:200%; } }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="scene">
+
+  <!-- ENTRY -->
+  <div id="entry">
+    <div class="lock-icon">💌</div>
+    <h1>Someone left a message for you</h1>
+    <p>Type your name to unlock it &darr;</p>
+    <input class="name-box" id="nameInput" type="text" placeholder="Your name here…" maxlength="30" autocomplete="off" />
+    <button class="enter-btn" onclick="unlock()">Open the surprise ✨</button>
+  </div>
+
+  <!-- BIRTHDAY -->
+  <div id="birthday">
+    <div class="greeting-name" id="gName"></div>
+    <div class="hb-line">// Happy Birthday, Teerak 🎂</div>
+
+    <div class="terminal-box">
+      <div class="t-bar"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div>
+      <div class="t-line" id="l1"><span class="prompt">$</span> <span class="kw">git log</span> <span class="val">--love</span> <span class="cmt">--since="the day I met you"</span></div>
+      <div class="t-line" id="l2"><span class="cmt">→  commit: you.walked.into.my.life</span></div>
+      <div class="t-line" id="l3"><span class="cmt">→  commit: heart.exe started</span></div>
+      <div class="t-line" id="l4"><span class="cmt">→  commit: happiness.upgraded ∞</span></div>
+      <div class="t-line" id="l5"><span class="prompt">$</span> <span class="kw">print</span>(<span class="str">"I love you more than all the commits in this universe"</span>)</div>
+      <div class="t-line" id="l6"><span class="val">✓  True</span></div>
+    </div>
+
+    <div class="love-letters">
+      <div class="letter-card" id="c1">
+        <div class="emoji">🌙</div>
+        <h3>You are my constant</h3>
+        <p>In every loop, every late night, every bug — thinking of you makes it beautiful.</p>
+      </div>
+      <div class="letter-card" id="c2">
+        <div class="emoji">🔐</div>
+        <h3>No one else has access</h3>
+        <p>My heart runs only one process, and it's named after you. Always.</p>
+      </div>
+      <div class="letter-card" id="c3">
+        <div class="emoji">🌸</div>
+        <h3>You are my home</h3>
+        <p>Wherever you are is where I want to deploy everything I am.</p>
+      </div>
+      <div class="letter-card" id="c4">
+        <div class="emoji">✨</div>
+        <h3>Infinite iterations</h3>
+        <p>I would choose you in every version, every branch, every possible future.</p>
+      </div>
+    </div>
+
+    <div class="final-msg" id="finalMsg">
+      On your birthday, I just want you to know —<br>
+      you are the best thing that ever happened to my life.<br>
+      I love you deeply, truly, and more than I can write in any code.<br>
+      <span class="sign">— yours, always 💖</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Stars ──
+const canvas = document.getElementById('stars');
+const ctx = canvas.getContext('2d');
+let stars = [];
+
+function initStars() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = Array.from({length: 200}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.4 + 0.3,
+    a: Math.random(),
+    speed: Math.random() * 0.008 + 0.003
+  }));
+}
+
+function drawStars() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  stars.forEach(s => {
+    s.a += s.speed;
+    const opacity = 0.3 + 0.5 * Math.abs(Math.sin(s.a));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(248,220,230,${opacity})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+
+initStars();
+drawStars();
+window.addEventListener('resize', initStars);
+
+// ── Enter on keypress ──
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlock();
+});
+
+// ── Unlock ──
+function unlock() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) {
+    document.getElementById('nameInput').focus();
+    document.getElementById('nameInput').style.borderColor = 'rgba(255,100,100,0.6)';
+    setTimeout(() => document.getElementById('nameInput').style.borderColor = '', 1000);
+    return;
+  }
+
+  document.getElementById('entry').style.display = 'none';
+  const bd = document.getElementById('birthday');
+  bd.style.display = 'block';
+
+  document.getElementById('gName').textContent = name;
+
+  // burst hearts on click
+  burstHearts();
+
+  // reveal terminal lines
+  const lines = ['l1','l2','l3','l4','l5','l6'];
+  lines.forEach((id, i) => {
+    setTimeout(() => document.getElementById(id).classList.add('vis'), 600 + i * 400);
+  });
+
+  // reveal cards
+  ['c1','c2','c3','c4'].forEach((id, i) => {
+    setTimeout(() => document.getElementById(id).classList.add('vis'), 3000 + i * 300);
+  });
+
+  // reveal final
+  setTimeout(() => document.getElementById('finalMsg').classList.add('vis'), 4500);
+
+  // continuous hearts
+  setInterval(spawnHeart, 1800);
+}
+
+function burstHearts() {
+  for (let i = 0; i < 12; i++) {
+    setTimeout(spawnHeart, i * 80);
+  }
+}
+
+function spawnHeart() {
+  const emojis = ['💖','💗','💕','✨','🌸','💝','💓'];
+  const el = document.createElement('div');
+  el.className = 'heart-burst';
+  el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+  el.style.left = Math.random() * 90 + 5 + 'vw';
+  el.style.top  = Math.random() * 80 + 10 + 'vh';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+</script>
+</body>
+</html>
